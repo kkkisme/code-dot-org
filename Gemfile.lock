@@ -56,6 +56,15 @@ GIT
     geocoder (1.3.7)
 
 GIT
+  remote: https://github.com/wjordan/haml.git
+  revision: b9cc20c23153e37fef5763ade43c59a9fd6e5550
+  ref: escape_interpolated_html
+  specs:
+    haml (5.0.4)
+      temple (>= 0.8.0)
+      tilt
+
+GIT
   remote: https://github.com/wjordan/image_optim.git
   revision: 939996f7ad102227c73b42bfda0058f9c66698aa
   ref: cdo
@@ -355,9 +364,6 @@ GEM
       multi_json (~> 1.11)
       os (~> 0.9)
       signet (~> 0.7)
-    haml (5.0.4)
-      temple (>= 0.8.0)
-      tilt
     haml-rails (1.0.0)
       actionpack (>= 4.0.1)
       activesupport (>= 4.0.1)
@@ -807,7 +813,7 @@ DEPENDENCIES
   geocoder!
   google-api-client
   google_drive
-  haml
+  haml!
   haml-rails
   haml_lint
   highline (~> 1.6.21)

@@ -152,7 +152,9 @@ gem 'omniauth-google-oauth2', '~> 0.3.1'
 gem 'omniauth-windowslive', '~> 0.0.11', github: 'wjordan/omniauth-windowslive', ref: 'cdo'
 
 gem 'bootstrap-sass', '~> 2.3.2.2'
-gem 'haml'
+
+# Ref: https://github.com/haml/haml/issues/940
+gem 'haml', github: 'wjordan/haml', ref: 'escape_interpolated_html'
 
 gem 'jquery-ui-rails', '~> 6.0.1'
 
