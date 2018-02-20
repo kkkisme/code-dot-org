@@ -57,7 +57,7 @@ GIT
 
 GIT
   remote: https://github.com/wjordan/haml.git
-  revision: b9cc20c23153e37fef5763ade43c59a9fd6e5550
+  revision: 39aa29e891d80b92b96e69551fc6e984abf0ed97
   ref: escape_interpolated_html
   specs:
     haml (5.0.4)
