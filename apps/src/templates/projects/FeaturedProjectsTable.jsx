@@ -5,10 +5,14 @@ import {ImageWithStatus} from '../ImageWithStatus';
 import {Table, sort} from 'reactabular';
 import wrappedSortable from '../tables/wrapped_sortable';
 import orderBy from 'lodash/orderBy';
-import {PROJECT_TYPE_MAP, personalProjectDataPropType} from './projectConstants';
+import {
+  PROJECT_TYPE_MAP,
+  featuredProjectDataPropType,
+  featuredProjectTableTypes
+} from './projectConstants';
 import QuickActionsCell from '../tables/QuickActionsCell';
 import {tableLayoutStyles, sortableOptions} from "../tables/tableConstants";
-import PopUpMenu, {MenuBreak} from "@cdo/apps/lib/ui/PopUpMenu";
+import PopUpMenu from "@cdo/apps/lib/ui/PopUpMenu";
 
 const PROJECT_DEFAULT_IMAGE = '/blockly/media/projects/project_default.png';
 
@@ -45,7 +49,7 @@ export const styles = {
     borderWidth: '1px 1px 1px 0px',
     borderColor: color.border_light_gray,
     padding: 15,
-    width: 270
+    width: 250
   },
   headerCellName: {
     borderWidth: '0px 1px 1px 0px',
@@ -73,37 +77,75 @@ const thumbnailFormatter = function (thumbnailUrl) {
           />);
 };
 
-const nameFormatter = (name, {rowData}) => {
-  const url = '/projects/${rowData.type}/${rowData.channel}/';
-  return <a style={tableLayoutStyles.link} href={url} target="_blank">{name}</a>;
+const nameFormatter = (projectName, {rowData}) => {
+  const url = `/projects/${rowData.type}/${rowData.channel}/`;
+  return <a style={tableLayoutStyles.link} href={url} target="_blank">{projectName}</a>;
 };
 
-const actionsFormatter = (actions, {rowData}) => {
+const unfeature = (channel) => {
+  var url = `/featured_projects/${channel}/unfeature`;
+  $.ajax({
+    url: url,
+    type:'PUT',
+    dataType:'json',
+  }).done(handleSuccess).fail(handleUnfeatureFailure);
+};
+
+const handleSuccess = () => {
+  window.location.reload(true);
+};
+
+const handleUnfeatureFailure = () => {
+  alert("Shucks. Something went wrong - this project is still featured.");
+};
+
+const handleFeatureFailure = () => {
+  alert("Shucks. Something went wrong - this project wasn't featured.");
+};
+
+const actionsFormatterFeatured = (actions, {rowData}) => {
   return (
     <QuickActionsCell>
       <PopUpMenu.Item
-        onClick={() => {}}
+        onClick={() => unfeature(rowData.channel)}
       >
-        {i18n.rename()}
+        {i18n.stopFeaturing()}
       </PopUpMenu.Item>
+    </QuickActionsCell>
+  );
+};
+
+const feature = (channel, publishedAt) => {
+  var url = `/featured_projects/${channel}/feature`;
+  if (!publishedAt) {
+    alert(i18n.featureUnpublishedWarning());
+  }
+  $.ajax({
+    url: url,
+    type:'PUT',
+    dataType:'json',
+  }).done(handleSuccess).fail(handleFeatureFailure);
+};
+
+const actionsFormatterUnfeatured = (actions, {rowData}) => {
+  return (
+    <QuickActionsCell>
       <PopUpMenu.Item
-        onClick={() => {}}
+        onClick={() => feature(rowData.channel, rowData.publishedAt)}
       >
-        {i18n.remix()}
-      </PopUpMenu.Item>
-      <MenuBreak/>
-      <PopUpMenu.Item
-        onClick={() => {}}
-      >
-        {i18n.deleteProject()}
+        {i18n.featureAgain()}
       </PopUpMenu.Item>
     </QuickActionsCell>
   );
 };
 
 const dateFormatter = (time) => {
-  const date = new Date(time);
-  return date.toLocaleDateString();
+  if (time) {
+    const date = new Date(time);
+    return date.toLocaleDateString();
+  } else {
+    return i18n.no();
+  }
 };
 
 const typeFormatter = (type) => {
@@ -112,9 +154,10 @@ const typeFormatter = (type) => {
 
 class FeaturedProjectsTable extends React.Component {
   static propTypes = {
-    projectList: PropTypes.arrayOf(personalProjectDataPropType).isRequired,
-    tableVersion: PropTypes.oneOf(['currentFeatured', 'archiveFeatured']).isRequired
+    projectList: PropTypes.arrayOf(featuredProjectDataPropType).isRequired,
+    tableVersion: PropTypes.oneOf(Object.values(featuredProjectTableTypes)).isRequired
   };
+
 
   state = {
     [COLUMNS.PROJECT_NAME]: {
@@ -166,7 +209,7 @@ class FeaturedProjectsTable extends React.Component {
         }
       },
       {
-        property: 'project_name',
+        property: 'projectName',
         header: {
           label: i18n.projectName(),
           props: {style: {
@@ -247,7 +290,7 @@ class FeaturedProjectsTable extends React.Component {
           },
         },
         cell: {
-          format: actionsFormatter,
+          format: actionsFormatterUnfeatured,
           props: {style: tableLayoutStyles.cell}
         }
       }
@@ -265,7 +308,7 @@ class FeaturedProjectsTable extends React.Component {
           },
         },
         cell: {
-          format: actionsFormatter,
+          format: actionsFormatterFeatured,
           props: {style: tableLayoutStyles.cell}
         }
       }

@@ -4,7 +4,7 @@ import PopUpMenu, {MenuBreak} from "@cdo/apps/lib/ui/PopUpMenu";
 import color from "../../util/color";
 import FontAwesome from '../FontAwesome';
 import Button from '../Button';
-import {startEditingStudent, cancelEditingStudent, removeStudent} from './manageStudentsRedux';
+import {startEditingStudent, cancelEditingStudent, removeStudent, saveStudent, addStudent} from './manageStudentsRedux';
 import {connect} from 'react-redux';
 import BaseDialog from '../BaseDialog';
 import DialogFooter from "../teacherDashboard/DialogFooter";
@@ -19,12 +19,17 @@ const styles = {
 class ManageStudentActionsCell extends Component {
   static propTypes = {
     id: PropTypes.number.isRequired,
-    sectionId: PropTypes.number.isRequired,
+    sectionId: PropTypes.number,
     isEditing: PropTypes.bool,
+    isSaving: PropTypes.bool,
+    disableSaving: PropTypes.bool,
+    isAddRow: PropTypes.bool,
     // Provided by redux
     startEditingStudent: PropTypes.func,
     cancelEditingStudent: PropTypes.func,
     removeStudent: PropTypes.func,
+    saveStudent: PropTypes.func,
+    addStudent: PropTypes.func,
   };
 
   state = {
@@ -64,6 +69,14 @@ class ManageStudentActionsCell extends Component {
     this.props.cancelEditingStudent(this.props.id);
   };
 
+  onSave = () => {
+    this.props.saveStudent(this.props.id);
+  };
+
+  onAdd = () => {
+    this.props.addStudent(this.props.id);
+  };
+
   render() {
     return (
       <div>
@@ -84,10 +97,29 @@ class ManageStudentActionsCell extends Component {
             </PopUpMenu.Item>
           </QuickActionsCell>
         }
-        {this.props.isEditing &&
+        {(this.props.isEditing && !this.props.isAddRow) &&
           <div>
-            <Button onClick={() => {}} color={Button.ButtonColor.white} text={i18n.save()} />
-            <Button onClick={this.onCancel} color={Button.ButtonColor.blue} text={i18n.cancel()} />
+            <Button
+              onClick={this.onSave}
+              color={Button.ButtonColor.white}
+              text={i18n.save()}
+              disabled={this.props.isSaving || this.props.disableSaving}
+            />
+            <Button
+              onClick={this.onCancel}
+              color={Button.ButtonColor.blue}
+              text={i18n.cancel()}
+            />
+          </div>
+        }
+        {this.props.isAddRow &&
+          <div>
+            <Button
+              onClick={this.onAdd}
+              color={Button.ButtonColor.white}
+              text={i18n.add()}
+              disabled={this.props.isSaving || this.props.disableSaving}
+            />
           </div>
         }
         <BaseDialog
@@ -96,8 +128,14 @@ class ManageStudentActionsCell extends Component {
           isOpen={this.state.deleting}
           style={{paddingLeft: 20, paddingRight: 20, paddingBottom: 20}}
         >
-          <h2 style={styles.heading}>{i18n.removeStudent()}</h2>
-          <div>{i18n.removeStudentConfirm()}</div>
+          <h2 style={styles.heading}>{i18n.removeStudentHeader()}</h2>
+          <div>
+            {i18n.removeStudentConfirm1() + ' '}
+            <a href="https://support.code.org/hc/en-us/articles/115001475131-Adding-a-personal-login-to-a-teacher-created-account">
+              {i18n.removeStudentConfirm2()}
+            </a>
+            {' ' + i18n.removeStudentConfirm3()}
+          </div>
           <DialogFooter>
             <Button
               text={i18n.dialogCancel()}
@@ -128,5 +166,11 @@ export default connect(state => ({}), dispatch => ({
   },
   removeStudent(id) {
     dispatch(removeStudent(id));
+  },
+  saveStudent(id) {
+    dispatch(saveStudent(id));
+  },
+  addStudent(id) {
+    dispatch(addStudent(id));
   },
 }))(ManageStudentActionsCell);

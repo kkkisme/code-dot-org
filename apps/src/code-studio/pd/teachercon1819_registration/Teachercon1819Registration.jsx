@@ -1,21 +1,20 @@
 import {PropTypes} from 'react';
 import FormController from '../form_components/FormController';
 
-import Welcome from './Welcome';
 import Joining from './Joining';
 import TravelPlans from './TravelPlans';
 import CoursePlans from './CoursePlans';
 import Releases from './Releases';
-import Confirmation from './Confirmation';
 
 import { TeacherSeatAcceptanceOptions } from '@cdo/apps/generated/pd/teachercon1819RegistrationConstants';
 
 export default class Teachercon1819Registration extends FormController {
   static propTypes = {
     ...FormController.propTypes,
-    applicationId: PropTypes.number.isRequired,
+    applicationId: PropTypes.number,
+    regionalPartnerId: PropTypes.number,
     applicationType: PropTypes.string.isRequired,
-    course: PropTypes.string.isRequired,
+    course: PropTypes.string,
     city: PropTypes.string.isRequired,
     date: PropTypes.string.isRequired,
     email: PropTypes.string.isRequired,
@@ -33,7 +32,8 @@ export default class Teachercon1819Registration extends FormController {
       email: this.props.email,
       preferredFirstName: this.props.firstName,
       lastName: this.props.lastName,
-      phone: this.props.phone
+      phone: this.props.phone,
+      course: this.props.course
     };
   }
 
@@ -43,29 +43,40 @@ export default class Teachercon1819Registration extends FormController {
    * @override
    */
   getPageComponents() {
-    const pageComponents = [
-      Welcome,
-      Joining,
-      TravelPlans,
-    ];
+    if (
+        this.state.data.teacherAcceptSeat === TeacherSeatAcceptanceOptions['decline'] ||
+        this.state.data.ableToAttend === 'No'
+    ) {
+      return [Joining];
+    } else {
+      const pageComponents = [
+        Joining,
+        TravelPlans,
+      ];
+
+      if (this.props.applicationType === "Teacher") {
+        pageComponents.push(CoursePlans);
+      }
+
+      pageComponents.push(Releases);
+
+      return pageComponents;
+    }
+  }
+
+  /**
+   * @override
+   */
+  getRequiredFields() {
+    const requiredFields = super.getRequiredFields();
 
     if (this.props.applicationType === "Teacher") {
-      pageComponents.push(CoursePlans);
+      requiredFields.push("teacherAcceptSeat");
+    } else {
+      requiredFields.push("ableToAttend");
     }
 
-    // We want to include the confirmation page by default, but remove it if the
-    // teacher has responded to the "accept seat" question with something other
-    // than yes. It would of course be easier to just add the confirmation page
-    // once they respond yes, but if we do that then the user-visible page count
-    // will _grow_ as they progress through the form, which is a much weirder
-    // user experience than it shrinking.
-    if (!(this.state.data.teacherAcceptSeat && this.state.data.teacherAcceptSeat !== TeacherSeatAcceptanceOptions.accept)) {
-      pageComponents.push(Confirmation);
-    }
-
-    pageComponents.push(Releases);
-
-    return pageComponents;
+    return requiredFields;
   }
 
   /**
@@ -91,7 +102,8 @@ export default class Teachercon1819Registration extends FormController {
   serializeFormData() {
     return {
       ...super.serializeFormData(),
-      applicationId: this.props.applicationId
+      applicationId: this.props.applicationId,
+      regionalPartnerId: this.props.regionalPartnerId,
     };
   }
 

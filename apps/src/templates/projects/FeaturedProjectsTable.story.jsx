@@ -1,7 +1,11 @@
 import React from 'react';
 import FeaturedProjectsTable from './FeaturedProjectsTable';
+import {
+  stubFakeFeaturedProjectData,
+  stubFakeUnfeaturedProjectData
+} from './generateFakeProjects';
+import {featuredProjectTableTypes} from './projectConstants';
 
-// TODO [ErinB] update to use projectList data that highlights the differences of the tables. Currently a work in progress.
 export default storybook => {
   return storybook
     .storiesOf('FeaturedProjectsTable', module)
@@ -11,8 +15,8 @@ export default storybook => {
         description: 'Table of currently featured projects projects',
         story: () => (
           <FeaturedProjectsTable
-            projectList={[]}
-            tableVersion="currentFeatured"
+            projectList={stubFakeFeaturedProjectData}
+            tableVersion={featuredProjectTableTypes.current}
           />
         )
       },
@@ -21,8 +25,8 @@ export default storybook => {
         description: 'Table of projects that have previously been featured',
         story: () => (
           <FeaturedProjectsTable
-            projectList={[]}
-            tableVersion="archiveFeatured"
+            projectList={stubFakeUnfeaturedProjectData}
+            tableVersion={featuredProjectTableTypes.archived}
           />
         )
       },

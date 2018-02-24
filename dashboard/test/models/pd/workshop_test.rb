@@ -317,11 +317,11 @@ class Pd::WorkshopTest < ActiveSupport::TestCase
   end
 
   test 'friendly name' do
-    workshop = create :pd_workshop, course: Pd::Workshop::COURSE_CSF, location_name: 'Code.org',
+    workshop = create :pd_workshop, course: Pd::Workshop::COURSE_ADMIN, location_name: 'Code.org',
       sessions: [create(:pd_session, start: Date.new(2016, 9, 1))]
 
     # no subject
-    assert_equal 'CS Fundamentals workshop on 09/01/16 at Code.org', workshop.friendly_name
+    assert_equal 'Admin workshop on 09/01/16 at Code.org', workshop.friendly_name
 
     # with subject
     workshop.update!(course: Pd::Workshop::COURSE_ECS, subject: Pd::Workshop::SUBJECT_ECS_UNIT_5)
@@ -730,10 +730,11 @@ class Pd::WorkshopTest < ActiveSupport::TestCase
 
   test 'suppress_reminders?' do
     suppressed = [
+      create(:pd_workshop, course: Pd::Workshop::COURSE_CSF, subject: Pd::Workshop::SUBJECT_CSF_FIT),
       create(:pd_workshop, course: Pd::Workshop::COURSE_CSD, subject: Pd::Workshop::SUBJECT_CSD_TEACHER_CON),
       create(:pd_workshop, course: Pd::Workshop::COURSE_CSD, subject: Pd::Workshop::SUBJECT_CSD_FIT),
       create(:pd_workshop, course: Pd::Workshop::COURSE_CSP, subject: Pd::Workshop::SUBJECT_CSP_TEACHER_CON),
-      create(:pd_workshop, course: Pd::Workshop::COURSE_CSP, subject: Pd::Workshop::SUBJECT_CSP_FIT),
+      create(:pd_workshop, course: Pd::Workshop::COURSE_CSP, subject: Pd::Workshop::SUBJECT_CSP_FIT)
     ]
 
     refute @workshop.suppress_reminders?
@@ -797,30 +798,30 @@ class Pd::WorkshopTest < ActiveSupport::TestCase
   end
 
   test 'friendly date range same month' do
-    workshop = create :pd_workshop, num_sessions: 5, sessions_from: Date.new(2017, 3, 10)
+    workshop = build :pd_workshop, num_sessions: 5, sessions_from: Date.new(2017, 3, 10)
     assert_equal 'March 10-14, 2017', workshop.friendly_date_range
   end
 
   test 'friendly date range different months' do
-    workshop = create :pd_workshop, num_sessions: 5, sessions_from: Date.new(2017, 3, 30)
+    workshop = build :pd_workshop, num_sessions: 5, sessions_from: Date.new(2017, 3, 30)
     assert_equal 'March 30 - April 3, 2017', workshop.friendly_date_range
   end
 
   test 'date_and_location_name with processed location and sessions' do
-    workshop = create :pd_workshop, num_sessions: 5, sessions_from: Date.new(2017, 3, 30),
+    workshop = build :pd_workshop, num_sessions: 5, sessions_from: Date.new(2017, 3, 30),
       processed_location: {city: 'Seattle', state: 'WA'}.to_json
 
     assert_equal 'March 30 - April 3, 2017, Seattle WA', workshop.date_and_location_name
   end
 
   test 'date_and_location_name with processed location but no sessions' do
-    workshop = create :pd_workshop, processed_location: {city: 'Seattle', state: 'WA'}.to_json
+    workshop = build :pd_workshop, processed_location: {city: 'Seattle', state: 'WA'}.to_json
 
     assert_equal 'Dates TBA, Seattle WA', workshop.date_and_location_name
   end
 
   test 'date_and_location_name with no location but with sessions' do
-    workshop = create :pd_workshop, num_sessions: 5, sessions_from: Date.new(2017, 3, 30),
+    workshop = build :pd_workshop, num_sessions: 5, sessions_from: Date.new(2017, 3, 30),
       processed_location: nil
 
     assert_equal 'March 30 - April 3, 2017, Location TBA', workshop.date_and_location_name
@@ -833,10 +834,44 @@ class Pd::WorkshopTest < ActiveSupport::TestCase
   end
 
   test 'date_and_location_name for teachercon' do
-    workshop = create :pd_workshop, :teachercon, num_sessions: 5, sessions_from: Date.new(2017, 3, 30),
+    workshop = build :pd_workshop, :teachercon, num_sessions: 5, sessions_from: Date.new(2017, 3, 30),
       processed_location: {city: 'Seattle', state: 'WA'}.to_json
 
     assert_equal 'March 30 - April 3, 2017, Seattle WA TeacherCon', workshop.date_and_location_name
+  end
+
+  test 'friendly_location TBA' do
+    workshop = build :pd_workshop, location_address: 'tba'
+    assert_equal 'Location TBA', workshop.friendly_location
+  end
+
+  test 'friendly_location with a city and state' do
+    workshop = build :pd_workshop, location_address: 'Seattle, WA',
+      processed_location: {city: 'Seattle', state: 'WA'}.to_json
+    assert_equal 'Seattle WA', workshop.friendly_location
+  end
+
+  test 'friendly_location with an unprocessable location address returns the address as entered' do
+    workshop = build :pd_workshop, location_address: 'my custom unprocessable location', processed_location: nil
+    assert_equal 'my custom unprocessable location', workshop.friendly_location
+  end
+
+  test 'friendly_location with no location returns tba' do
+    workshop = build :pd_workshop, location_address: '', processed_location: nil
+    assert_equal 'Location TBA', workshop.friendly_location
+  end
+
+  test 'workshops organized by a non program manager are not assigned regional partner' do
+    workshop = create :pd_workshop
+    assert_nil workshop.regional_partner
+  end
+
+  test 'workshops organized by a program manager are assigned the regional partner' do
+    regional_partner = create :regional_partner
+    create :regional_partner_program_manager, regional_partner: regional_partner, program_manager: @organizer
+    workshop = create :pd_workshop, organizer: @organizer
+
+    assert_equal regional_partner, workshop.regional_partner
   end
 
   private

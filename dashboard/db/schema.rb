@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180129212534) do
+ActiveRecord::Schema.define(version: 20180219200100) do
 
   create_table "activities", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer  "user_id"
@@ -135,7 +135,7 @@ ActiveRecord::Schema.define(version: 20180129212534) do
   create_table "census_summaries", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.string   "school_id",   limit: 12,    null: false
     t.integer  "school_year", limit: 2,     null: false
-    t.string   "teaches_cs",  limit: 1,     null: false
+    t.string   "teaches_cs",  limit: 1
     t.text     "audit_data",  limit: 65535, null: false
     t.datetime "created_at",                null: false
     t.datetime "updated_at",                null: false
@@ -313,9 +313,9 @@ ActiveRecord::Schema.define(version: 20180129212534) do
 
   create_table "featured_projects", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer  "storage_app_id"
-    t.integer  "who_featured_user_id"
-    t.datetime "created_at"
-    t.index ["storage_app_id"], name: "index_featured_projects_on_storage_app_id", using: :btree
+    t.datetime "featured_at"
+    t.datetime "unfeatured_at"
+    t.index ["storage_app_id"], name: "index_featured_projects_on_storage_app_id", unique: true, using: :btree
   end
 
   create_table "followers", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -699,10 +699,12 @@ ActiveRecord::Schema.define(version: 20180129212534) do
 
   create_table "pd_teachercon1819_registrations", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
     t.integer  "pd_application_id"
-    t.text     "form_data",         limit: 65535
-    t.datetime "created_at",                      null: false
-    t.datetime "updated_at",                      null: false
+    t.text     "form_data",           limit: 65535
+    t.datetime "created_at",                        null: false
+    t.datetime "updated_at",                        null: false
+    t.integer  "regional_partner_id"
     t.index ["pd_application_id"], name: "index_pd_teachercon1819_registrations_on_pd_application_id", using: :btree
+    t.index ["regional_partner_id"], name: "index_pd_teachercon1819_registrations_on_regional_partner_id", using: :btree
   end
 
   create_table "pd_teachercon_surveys", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" do |t|
@@ -911,6 +913,8 @@ ActiveRecord::Schema.define(version: 20180129212534) do
     t.text     "notes",              limit: 65535
     t.datetime "created_at",                       null: false
     t.datetime "updated_at",                       null: false
+    t.datetime "deleted_at"
+    t.text     "properties",         limit: 65535
     t.index ["name", "contact_id"], name: "index_regional_partners_on_name_and_contact_id", unique: true, using: :btree
   end
 
@@ -1412,6 +1416,7 @@ ActiveRecord::Schema.define(version: 20180129212534) do
   add_foreign_key "level_concept_difficulties", "levels"
   add_foreign_key "pd_payment_terms", "regional_partners"
   add_foreign_key "pd_regional_partner_cohorts", "pd_workshops", column: "summer_workshop_id"
+  add_foreign_key "pd_teachercon1819_registrations", "regional_partners"
   add_foreign_key "pd_workshops", "regional_partners"
   add_foreign_key "peer_reviews", "level_sources"
   add_foreign_key "peer_reviews", "levels"

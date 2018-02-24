@@ -17,6 +17,8 @@
 #  notes              :text(65535)
 #  created_at         :datetime         not null
 #  updated_at         :datetime         not null
+#  deleted_at         :datetime
+#  properties         :text(65535)
 #
 # Indexes
 #
@@ -26,7 +28,7 @@
 require 'state_abbr'
 
 class RegionalPartner < ActiveRecord::Base
-  belongs_to :contact, class_name: 'User'
+  acts_as_paranoid # Use deleted_at column instead of deleting rows.
 
   has_many :regional_partner_program_managers
   has_many :program_managers,
@@ -35,6 +37,13 @@ class RegionalPartner < ActiveRecord::Base
 
   has_many :pd_workshops_organized, class_name: 'Pd::Workshop', through: :regional_partner_program_managers
   has_many :mappings, -> {order :state, :zip_code}, class_name: Pd::RegionalPartnerMapping, dependent: :destroy
+
+  include SerializedProperties
+
+  serialized_attrs %w(
+    cohort_capacity_csd
+    cohort_capacity_csp
+  )
 
   # Upcoming and not ended
   def future_pd_workshops_organized
@@ -57,6 +66,14 @@ class RegionalPartner < ActiveRecord::Base
       regional_partner_id: id,
       program_manager_id: program_manager_id
     )
+  end
+
+  def contact
+    User.find_by(id: contact_id) || program_managers.first
+  end
+
+  def contact=(user)
+    self.contact_id = user.try(:id)
   end
 
   # find a Regional Partner that services a particular region

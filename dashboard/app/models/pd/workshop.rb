@@ -106,6 +106,11 @@ class Pd::Workshop < ActiveRecord::Base
       SUBJECT_CSD_UNIT_6 = 'Unit 6: Physical Computing'.freeze,
       SUBJECT_CSD_TEACHER_CON = SUBJECT_TEACHER_CON,
       SUBJECT_CSD_FIT = SUBJECT_FIT
+    ],
+    COURSE_CSF => [
+      SUBJECT_CSF_101 = 'Intro Workshop'.freeze,
+      SUBJECT_CSF_201 = 'Deep Dive Workshop'.freeze,
+      SUBJECT_CSF_FIT = SUBJECT_FIT
     ]
   }.freeze
 
@@ -191,6 +196,11 @@ class Pd::Workshop < ActiveRecord::Base
 
   before_save :process_location, if: -> {location_address_changed?}
   auto_strip_attributes :location_name, :location_address
+
+  before_save :assign_regional_partner, if: -> {organizer_id_changed?}
+  def assign_regional_partner
+    self.regional_partner = organizer.try {|o| o.regional_partners.first}
+  end
 
   def sessions_must_start_on_separate_days
     if sessions.all(&:valid?)
@@ -345,11 +355,20 @@ class Pd::Workshop < ActiveRecord::Base
       "#{sessions.first.start.strftime('%B %-d')} - #{sessions.last.start.strftime('%B %-d, %Y')}"
   end
 
+  # Friendly location string is determined by:
+  # 1. known variant of TBA? use TBA
+  # 2. processed location? use city, state
+  # 3. unprocessable location: use user-entered string
+  # 4. no location address at all? use TBA
+  def friendly_location
+    return 'Location TBA' if location_address_tba?
+    return "#{location_city} #{location_state}" if processed_location
+    location_address.presence || 'Location TBA'
+  end
+
   def date_and_location_name
     date_string = sessions.any? ? friendly_date_range : 'Dates TBA'
-    location_string = processed_location ? "#{location_city} #{location_state}" : 'Location TBA'
-
-    "#{date_string}, #{location_string}#{teachercon? ? ' TeacherCon' : ''}"
+    "#{date_string}, #{friendly_location}#{teachercon? ? ' TeacherCon' : ''}"
   end
 
   # Puts workshop in 'In Progress' state
@@ -389,7 +408,8 @@ class Pd::Workshop < ActiveRecord::Base
       SUBJECT_CSP_TEACHER_CON,
       SUBJECT_CSP_FIT,
       SUBJECT_CSD_TEACHER_CON,
-      SUBJECT_CSD_FIT
+      SUBJECT_CSD_FIT,
+      SUBJECT_CSF_FIT
     ].include? subject
   end
 
@@ -473,10 +493,14 @@ class Pd::Workshop < ActiveRecord::Base
     end
   end
 
+  def location_address_tba?
+    %w(tba tbd n/a).include?(location_address.try(:downcase))
+  end
+
   def process_location
     result = nil
 
-    unless location_address.blank? || %w(tba tbd n/a).include?(location_address.downcase)
+    unless location_address.blank? || location_address_tba?
       begin
         Geocoder.with_errors do
           # Geocoder can raise a number of errors including SocketError, with a common base of StandardError
@@ -596,7 +620,8 @@ class Pd::Workshop < ActiveRecord::Base
   def fit_weekend?
     [
       SUBJECT_CSP_FIT,
-      SUBJECT_CSD_FIT
+      SUBJECT_CSD_FIT,
+      SUBJECT_CSF_FIT
     ].include?(subject)
   end
 

@@ -203,8 +203,6 @@ StudioApp.prototype.configure = function (options) {
   this.scratch = options.level && options.level.scratch;
   this.usingBlockly_ = !this.editCode && !this.scratch;
 
-  // TODO (bbuchanan) : Replace this editorless-hack with setting an editor enum
-  // or (even better) inject an appropriate editor-adaptor.
   if (options.isEditorless) {
     this.editCode = false;
     this.usingBlockly_ = false;
@@ -272,8 +270,8 @@ StudioApp.prototype.init = function (config) {
   this.configureDom(config);
 
   //Only log a page load when there are videos present
-  if (config.level.levelVideos && config.level.levelVideos.length > 0 && (config.app === 'applab' || config.app === 'gamelab')){
-    if (experiments.isEnabled('resources_tab') || experiments.isEnabled('resourcesTab')){
+  if (config.level.levelVideos && config.level.levelVideos.length > 0 && (config.app === 'applab' || config.app === 'gamelab')) {
+    if (experiments.isEnabled('resources_tab') || experiments.isEnabled('resourcesTab')) {
       firehoseClient.putRecord(
         'analysis-events',
         {
@@ -653,7 +651,7 @@ StudioApp.prototype.scaleLegacyShare = function () {
 
 StudioApp.prototype.getCode = function () {
   if (!this.editCode) {
-    throw "getCode() requires editCode";
+    return codegen.workspaceCode(Blockly);
   }
   if (this.hideSource) {
     return this.startBlocks_;
@@ -691,11 +689,11 @@ StudioApp.prototype.handleClearPuzzle = function (config) {
       // Don't pass CRLF pairs to droplet until they fix CR handling:
       resetValue = config.level.startBlocks.replace(/\r\n/g, '\n');
     }
-    // TODO (bbuchanan): This getValue() call is a workaround for a Droplet bug,
+    // This getValue() call is a workaround for a Droplet bug,
     // See https://github.com/droplet-editor/droplet/issues/137
     // Calling getValue() updates the cached ace editor value, which can be
     // out-of-date in droplet and cause an incorrect early-out.
-    // Remove this line once that bug is fixed and our Droplet lib is updated.
+    // Could remove this line once that bug is fixed and Droplet is updated.
     this.editor.getValue();
     this.editor.setValue(resetValue);
 
@@ -851,7 +849,6 @@ StudioApp.prototype.assetUrl_ = function (path) {
  *   to be played.
  */
 StudioApp.prototype.reset = function (shouldPlayOpeningAnimation) {
-  // TODO (bbuchanan): Look for comon reset logic we can pull here
   // Override in app subclass
 };
 
@@ -1200,7 +1197,7 @@ StudioApp.prototype.showInstructionsDialog_ = function (level, autoClose) {
 */
 StudioApp.prototype.onResize = function () {
   const codeWorkspace = document.getElementById('codeWorkspace');
-  if (codeWorkspace) {
+  if (codeWorkspace && $(codeWorkspace).is(':visible')) {
     var workspaceWidth = codeWorkspace.clientWidth;
 
     // Keep blocks static relative to the right edge in RTL mode
@@ -1440,25 +1437,38 @@ StudioApp.prototype.clearHighlighting = function () {
 * @param {FeedbackOptions} options
 */
 StudioApp.prototype.displayFeedback = function (options) {
+  // Special test code for edit blocks.
+  if (options.level.edit_blocks) {
+    options.feedbackType = TestResults.EDIT_BLOCKS;
+  }
+
   if (experiments.isEnabled('bubbleDialog')) {
     // eslint-disable-next-line no-unused-vars
     const { level, response, preventDialog, feedbackType, ...otherOptions } = options;
     if (Object.keys(otherOptions).length === 0) {
       const store = getStore();
+      const generatedCodeProperties =
+        this.feedback_.getGeneratedCodeProperties(this.config.appStrings);
+      const studentCode = {
+        message: generatedCodeProperties.shortMessage,
+        code: generatedCodeProperties.code,
+      };
       store.dispatch(setFeedbackData({
         isPerfect: feedbackType >= TestResults.MINIMUM_OPTIMAL_RESULT,
         blocksUsed: this.feedback_.getNumCountableBlocks(),
         displayFunometer: response && response.puzzle_ratings_enabled,
-        studentCode: this.feedback_.getGeneratedCodeProperties(this.config.appStrings),
+        studentCode,
         canShare: !this.disableSocialShare && !options.disableSocialShare,
       }));
       store.dispatch(setAchievements(getAchievements(store.getState())));
-      if (!preventDialog) {
+      if (this.shouldDisplayFeedbackDialog_(preventDialog, feedbackType)) {
         store.dispatch(showFeedback());
+        this.onFeedback(options);
+        return;
       }
-
-      this.onFeedback(options);
-      return;
+    } else {
+      console.warn('Unexpected feedback props:');
+      console.warn(otherOptions);
     }
   }
   options.onContinue = this.onContinue;
@@ -1471,12 +1481,9 @@ StudioApp.prototype.displayFeedback = function (options) {
       project.getShareUrl();
   } catch (e) {}
 
-  // Special test code for edit blocks.
-  if (options.level.edit_blocks) {
-    options.feedbackType = TestResults.EDIT_BLOCKS;
-  }
-
-  if (this.shouldDisplayFeedbackDialog(options)) {
+  if (this.shouldDisplayFeedbackDialog_(
+      options.preventDialog,
+      options.feedbackType)) {
     // let feedback handle creating the dialog
     this.feedback_.displayFeedback(options, this.requiredBlocks_,
       this.maxRequiredBlocksToFlag_, this.recommendedBlocks_,
@@ -1498,7 +1505,7 @@ StudioApp.prototype.displayFeedback = function (options) {
 
   // If this level is enabled with a hint prompt threshold, check it and some
   // other state values to see if we should show the hint prompt
-  if (this.config.level.hintPromptAttemptsThreshold !== undefined) {
+  if (this.config.level.hintPromptAttemptsThreshold) {
     this.authoredHintsController_.considerShowingOnetimeHintPrompt();
   }
 
@@ -1508,10 +1515,11 @@ StudioApp.prototype.displayFeedback = function (options) {
 /**
  * Whether feedback should be displayed as a modal dialog or integrated
  * into the top instructions
- * @param {FeedbackOptions} options
+ * @param {boolean} preventDialog
+ * @param {TestResult} feedbackType
  */
-StudioApp.prototype.shouldDisplayFeedbackDialog = function (options) {
-  if (options.preventDialog) {
+StudioApp.prototype.shouldDisplayFeedbackDialog_ = function (preventDialog, feedbackType) {
+  if (preventDialog) {
     return false;
   }
 
@@ -1519,7 +1527,7 @@ StudioApp.prototype.shouldDisplayFeedbackDialog = function (options) {
   // success feedback.
   const constants = getStore().getState().pageConstants;
   if (!constants.noInstructionsWhenCollapsed) {
-    return this.feedback_.canContinueToNextLevel(options.feedbackType);
+    return this.feedback_.canContinueToNextLevel(feedbackType);
   }
   return true;
 };
@@ -1852,7 +1860,7 @@ StudioApp.prototype.configureDom = function (config) {
     // Temporarily attach an event listener to log clicks
     // Logs the type of app and the ids of the puzzle
     var videoThumbnail = document.getElementsByClassName('video_thumbnail');
-    if (videoThumbnail[0] && (config.app === 'gamelab' || config.app === 'applab')){
+    if (videoThumbnail[0] && (config.app === 'gamelab' || config.app === 'applab')) {
       videoThumbnail[0].addEventListener('click', () => {
         firehoseClient.putRecord(
           'analysis-events',

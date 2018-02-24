@@ -20,28 +20,41 @@ export class Summary extends React.Component {
     isWorkshopAdmin: PropTypes.bool
   };
 
-  state = {
-    loading: true,
-    applications: null,
-    regionalPartnerName: this.props.regionalPartnerName,
-    regionalPartnerFilter: null
-  };
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      loading: true,
+      applications: null,
+      regionalPartnerName: this.props.regionalPartnerName,
+      regionalPartnerFilter: UnmatchedFilter
+    };
+  }
 
   componentWillMount() {
     this.load();
   }
 
-  load(selected = null) {
+  componentWillUnmount() {
+    this.abortLoad();
+  }
+
+  abortLoad() {
+    if (this.loadRequest) {
+      this.loadRequest.abort();
+    }
+  }
+
+  load(regionalPartnerFilter = this.state.regionalPartnerFilter) {
+    this.abortLoad();
+    this.setState({loading: true});
+
     let url = '/api/v1/pd/applications';
     if (this.props.isWorkshopAdmin) {
-      const regionalPartnerFilter = selected ? selected.value : null;
-      const regionalPartnerName = selected ? selected.label : this.props.regionalPartnerName;
-      this.setState({ regionalPartnerName, regionalPartnerFilter });
-
-      url += `?regional_partner_filter=${regionalPartnerFilter ? regionalPartnerFilter : UnmatchedFilter}`;
+      url += `?${$.param({regional_partner_filter: regionalPartnerFilter})}`;
     }
 
-    $.ajax({
+    this.loadRequest = $.ajax({
       method: 'GET',
       url,
       dataType: 'json'
@@ -54,7 +67,10 @@ export class Summary extends React.Component {
   }
 
   handleRegionalPartnerChange = (selected) => {
-    this.load(selected);
+    const regionalPartnerName = selected.label;
+    const regionalPartnerFilter = selected.value;
+    this.setState({regionalPartnerName, regionalPartnerFilter});
+    this.load(selected.value);
   };
 
   render() {
@@ -74,26 +90,31 @@ export class Summary extends React.Component {
         <h1>{this.state.regionalPartnerName}</h1>
         <div className="row">
           <SummaryTable
+            id="summary-csf-facilitators"
             caption="CS Fundamentals Facilitators"
             data={this.state.applications["csf_facilitators"]}
             path="csf_facilitators"
           />
           <SummaryTable
+            id="summary-csd-facilitators"
             caption="CS Discoveries Facilitators"
             data={this.state.applications["csd_facilitators"]}
             path="csd_facilitators"
           />
           <SummaryTable
+            id="summary-csp-facilitators"
             caption="CS Principles Facilitators"
             data={this.state.applications["csp_facilitators"]}
             path="csp_facilitators"
           />
           <SummaryTable
+            id="summary-csd-teachers"
             caption="CS Discoveries Teachers"
             data={this.state.applications["csd_teachers"]}
             path="csd_teachers"
           />
           <SummaryTable
+            id="summary-csp-teachers"
             caption="CS Principles Teachers"
             data={this.state.applications["csp_teachers"]}
             path="csp_teachers"

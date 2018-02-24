@@ -5,7 +5,6 @@ import {
   ControlLabel
 } from 'react-bootstrap';
 
-import {TextFields} from '@cdo/apps/generated/pd/teachercon1819RegistrationConstants';
 import UsPhoneNumberInput from "../form_components/UsPhoneNumberInput";
 import {isZipCode} from '@cdo/apps/util/formatValidation';
 
@@ -26,6 +25,8 @@ export default class TravelPlans extends Teachercon1819FormComponent {
     'howTraveling',
     'needHotel',
     'needAda',
+    'explainAda',
+    'dietaryNeedsDetails'
   ];
 
   static labels = {
@@ -34,13 +35,15 @@ export default class TravelPlans extends Teachercon1819FormComponent {
     contactRelationship: "Relationship to you:",
     contactPhone: "Phone number:",
     dietaryNeeds: "Do you have any dietary needs or food allergies?",
+    dietaryNeedsDetails: "Please provide details about your food allergy.",
     addressStreet: "Street",
     addressCity: "City",
     addressState: "State",
     addressZip: "Zip",
-    howTraveling: "Code.org provides a round trip flight for every TeacherCon attendee. If you choose to fly, we will provide you with detailed flight booking instructions approximately six weeks prior to TeacherCon. If you choose not to fly, and live at least 25 miles from the TeacherCon location, Code.org will provide you with a $150 gift card to help cover the cost of driving, trains, or public transit. Code.org is not able to provide reimbursement for the cost of driving, trainings, or public transit if you live less than 25 miles from the TeacherCon location. How will you travel to TeacherCon?",
+    howTraveling: "Code.org provides a round trip flight for every TeacherCon attendee. If you choose to fly, we will provide you with detailed flight booking instructions approximately six weeks prior to TeacherCon. If you choose not to fly, and live at least 25 miles from the TeacherCon location, Code.org will provide you with a $150 gift card to help cover the cost of driving, trains, or public transit. Code.org is not able to provide reimbursement for the cost of driving, trains, or public transit if you live less than 25 miles from the TeacherCon location. How will you travel to TeacherCon?",
     needHotel: "Code.org provides a hotel room for every TeacherCon attendee. Attendees will not be required to share a room. Would you like a hotel room at TeacherCon?",
     needAda: "Do you require an ADA accessible hotel room?",
+    explainAda: "Please explain your specific accommodation needs."
   };
 
   /**
@@ -74,8 +77,16 @@ export default class TravelPlans extends Teachercon1819FormComponent {
       );
     }
 
+    if (data.dietaryNeeds && data.dietaryNeeds.includes('Food Allergy')) {
+      requiredFields.push('dietaryNeedsDetails');
+    }
+
     if (data.needHotel === 'Yes') {
       requiredFields.push("needAda");
+
+      if (data.needAda === 'Yes') {
+        requiredFields.push("explainAda");
+      }
     }
 
     return requiredFields;
@@ -98,9 +109,12 @@ export default class TravelPlans extends Teachercon1819FormComponent {
         </FormGroup>
 
         <FormGroup>
-          {this.radioButtonsWithAdditionalTextFieldsFor("dietaryNeeds", {
-            [TextFields.foodAllergy]: "food_allergy_details"
-          })}
+          {this.checkBoxesFor("dietaryNeeds")}
+          {
+            this.props.data.dietaryNeeds &&
+            this.props.data.dietaryNeeds.includes('Food Allergy') &&
+            this.largeInputFor("dietaryNeedsDetails")
+          }
         </FormGroup>
 
         <FormGroup>
@@ -111,32 +125,55 @@ export default class TravelPlans extends Teachercon1819FormComponent {
           })}
           {
             this.props.data.liveFarAway &&
-              this.props.data.liveFarAway === 'Yes' &&
-              <FormGroup>
-                <ControlLabel>
-                  Please provide your home address
-                </ControlLabel>
-                {this.inputFor("addressStreet")}
-                {this.inputFor("addressCity")}
-                {this.selectFor("addressState", { placeholder: "Select a state" })}
-                {this.inputFor("addressZip")}
-              </FormGroup>
+            this.props.data.liveFarAway === 'Yes' &&
+            <FormGroup>
+              <ControlLabel>
+                Please provide your home address
+              </ControlLabel>
+              {this.inputFor("addressStreet")}
+              {this.inputFor("addressCity")}
+              {this.selectFor("addressState", {placeholder: "Select a state"})}
+              {this.inputFor("addressZip")}
+            </FormGroup>
           }
         </FormGroup>
 
         <FormGroup>
-          {this.radioButtonsFor("howTraveling")}
+          {this.radioButtonsWithAdditionalTextFieldsFor("howTraveling", {
+            'I will carpool with another TeacherCon attendee (Please note who):': 'carpooling_with_attendee'
+          })}
           {this.radioButtonsFor("needHotel")}
           {
-            this.props.data.needHotel &&
-              this.props.data.needHotel === 'Yes' &&
-              this.radioButtonsWithAdditionalTextFieldsFor("needAda", {
-                [TextFields.otherPleaseExplain] : "ada_details"
-              })
+            this.props.data.needHotel === 'Yes' &&
+            this.radioButtonsFor("needAda")
+          }
+          {
+            this.props.data.needHotel === 'Yes' &&
+            this.props.data.needAda === 'Yes' &&
+            this.largeInputFor("explainAda")
           }
         </FormGroup>
       </FormGroup>
     );
   }
-}
 
+  /**
+   * @override
+   */
+  static processPageData(data) {
+    const changes = {};
+
+    if (data.needHotel !== 'Yes') {
+      data.needAda = undefined;
+    }
+    if (data.needAda !== 'Yes') {
+      data.explainAda = undefined;
+    }
+
+    if (data.dietaryNeeds && !data.dietaryNeeds.includes('Food Allergy')) {
+      changes.dietaryNeedsDetails = undefined;
+    }
+
+    return changes;
+  }
+}
