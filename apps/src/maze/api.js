@@ -344,14 +344,16 @@ exports.hasLettuce = API_FUNCTION(function (id) {
  */
 
 exports.plant = API_FUNCTION(function (id) {
-  Maze.subtype.plant(id);
+  Maze.executionInfo.queueAction("plant", id);
 });
 
 exports.atSoil = API_FUNCTION(function (id) {
+  Maze.executionInfo.queueAction("at_soil", id);
   return Maze.subtype.atSoil(id);
 });
 
 exports.atSprout = API_FUNCTION(function (id) {
+  Maze.executionInfo.queueAction("at_sprout", id);
   return Maze.subtype.atSprout(id);
 });
 
