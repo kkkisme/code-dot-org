@@ -4,6 +4,7 @@ class Api::V1::Pd::CourseFacilitatorsControllerTest < ::ActionController::TestCa
   {
     admin: :success,
     workshop_organizer: :success,
+    program_manager: :success,
     facilitator: :forbidden,
     teacher: :forbidden
   }.each do |user_type, response|
