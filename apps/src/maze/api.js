@@ -316,26 +316,32 @@ exports.getLettuce = API_FUNCTION(function (id) {
 });
 
 exports.atCorn = API_FUNCTION(function (id) {
+  Maze.executionInfo.queueAction("at_corn", id);
   return Maze.subtype.atCorn(id);
 });
 
 exports.atPumpkin = API_FUNCTION(function (id) {
+  Maze.executionInfo.queueAction("at_pumpkin", id);
   return Maze.subtype.atPumpkin(id);
 });
 
 exports.atLettuce = API_FUNCTION(function (id) {
+  Maze.executionInfo.queueAction("at_lettuce", id);
   return Maze.subtype.atLettuce(id);
 });
 
 exports.hasCorn = API_FUNCTION(function (id) {
+  Maze.executionInfo.queueAction("has_corn", id);
   return Maze.subtype.hasCorn(id);
 });
 
 exports.hasPumpkin = API_FUNCTION(function (id) {
+  Maze.executionInfo.queueAction("has_pumpkin", id);
   return Maze.subtype.hasPumpkin(id);
 });
 
 exports.hasLettuce = API_FUNCTION(function (id) {
+  Maze.executionInfo.queueAction("has_lettuce", id);
   return Maze.subtype.hasLettuce(id);
 });
 

@@ -49,7 +49,6 @@ export default class Harvester extends Gatherer {
 
     const cell = this.getCell(row, col);
 
-    this.maze_.executionInfo.queueAction('has_' + cell.featureName(), id);
     return cell.featureType() === crop && cell.getCurrentValue() > 0;
   }
 
@@ -71,7 +70,6 @@ export default class Harvester extends Gatherer {
 
     const cell = this.getCell(row, col);
 
-    this.maze_.executionInfo.queueAction('at_' + cell.featureName(), id);
     return cell.featureType() === crop;
   }
 
