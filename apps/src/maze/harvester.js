@@ -31,19 +31,19 @@ export default class Harvester extends Gatherer {
     this.drawer = new HarvesterDrawer(this.maze_.map, this.skin_, svg, this);
   }
 
-  hasCorn(id) {
-    return this.hasCrop(HarvesterCell.FeatureType.CORN, id);
+  hasCorn() {
+    return this.hasCrop(HarvesterCell.FeatureType.CORN);
   }
 
-  hasPumpkin(id) {
-    return this.hasCrop(HarvesterCell.FeatureType.PUMPKIN, id);
+  hasPumpkin() {
+    return this.hasCrop(HarvesterCell.FeatureType.PUMPKIN);
   }
 
-  hasLettuce(id) {
-    return this.hasCrop(HarvesterCell.FeatureType.LETTUCE, id);
+  hasLettuce() {
+    return this.hasCrop(HarvesterCell.FeatureType.LETTUCE);
   }
 
-  hasCrop(crop, id) {
+  hasCrop(crop) {
     const col = this.maze_.pegmanX;
     const row = this.maze_.pegmanY;
 
@@ -52,19 +52,19 @@ export default class Harvester extends Gatherer {
     return cell.featureType() === crop && cell.getCurrentValue() > 0;
   }
 
-  atCorn(id) {
-    return this.atCrop(HarvesterCell.FeatureType.CORN, id);
+  atCorn() {
+    return this.atCrop(HarvesterCell.FeatureType.CORN);
   }
 
-  atPumpkin(id) {
-    return this.atCrop(HarvesterCell.FeatureType.PUMPKIN, id);
+  atPumpkin() {
+    return this.atCrop(HarvesterCell.FeatureType.PUMPKIN);
   }
 
-  atLettuce(id) {
-    return this.atCrop(HarvesterCell.FeatureType.LETTUCE, id);
+  atLettuce() {
+    return this.atCrop(HarvesterCell.FeatureType.LETTUCE);
   }
 
-  atCrop(crop, id) {
+  atCrop(crop) {
     const col = this.maze_.pegmanX;
     const row = this.maze_.pegmanY;
 
@@ -78,19 +78,19 @@ export default class Harvester extends Gatherer {
     cell.setCurrentValue(cell.getCurrentValue() - 1);
   }
 
-  getCorn(id) {
-    this.getCrop(HarvesterCell.FeatureType.CORN, id);
+  getCorn() {
+    this.getCrop(HarvesterCell.FeatureType.CORN);
   }
 
-  getPumpkin(id) {
-    this.getCrop(HarvesterCell.FeatureType.PUMPKIN, id);
+  getPumpkin() {
+    this.getCrop(HarvesterCell.FeatureType.PUMPKIN);
   }
 
-  getLettuce(id) {
-    this.getCrop(HarvesterCell.FeatureType.LETTUCE, id);
+  getLettuce() {
+    this.getCrop(HarvesterCell.FeatureType.LETTUCE);
   }
 
-  getCrop(crop, id) {
+  getCrop(crop) {
     const col = this.maze_.pegmanX;
     const row = this.maze_.pegmanY;
 
@@ -110,15 +110,15 @@ export default class Harvester extends Gatherer {
     return true;
   }
 
-  animateGetCorn(id) {
+  animateGetCorn() {
     this.animateGetCrop(HarvesterCell.FeatureType.CORN);
   }
 
-  animateGetPumpkin(id) {
+  animateGetPumpkin() {
     this.animateGetCrop(HarvesterCell.FeatureType.PUMPKIN);
   }
 
-  animateGetLettuce(id) {
+  animateGetLettuce() {
     this.animateGetCrop(HarvesterCell.FeatureType.LETTUCE);
   }
 
