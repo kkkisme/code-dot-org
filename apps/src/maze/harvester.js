@@ -100,16 +100,16 @@ export default class Harvester extends Gatherer {
 
     if (cell.featureType() !== crop) {
       this.maze_.executionInfo.terminateWithValue(HarvesterTerminationValue.WRONG_CROP);
-      return;
+      return false;
     }
 
     if (cell.getCurrentValue() === 0) {
       this.maze_.executionInfo.terminateWithValue(HarvesterTerminationValue.EMPTY_CROP);
-      return;
+      return false;
     }
 
-    this.maze_.executionInfo.queueAction('get_' + cell.featureName(), id);
     this.gotCropAt(row, col);
+    return true;
   }
 
   animateGetCorn(id) {
@@ -128,21 +128,10 @@ export default class Harvester extends Gatherer {
     const col = this.maze_.pegmanX;
     const row = this.maze_.pegmanY;
 
-    const cell = this.getCell(row, col);
-
-    if (cell.featureType() !== crop) {
-      throw new Error("Shouldn't be able to harvest the wrong kind of crop");
+    if (this.getCrop(crop)) {
+      this.playAudio_(HARVEST_SOUND);
+      this.drawer.updateItemImage(row, col, true);
     }
-
-    if (cell.getCurrentValue() <= 0) {
-      throw new Error("Shouldn't be able to end up with a harvest animation if " +
-        "there was nothing left to harvest");
-    }
-
-    this.playAudio_(HARVEST_SOUND);
-    this.gotCropAt(row, col);
-
-    this.drawer.updateItemImage(row, col, true);
   }
 
   /**
